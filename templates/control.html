@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS - Robot Control System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', 'Courier', monospace;
+            background: linear-gradient(135deg, #0a0e27 0%, #16213e 50%, #0f3460 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #00ff88;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(0, 255, 136, 0.03) 0px,
+                    rgba(0, 255, 136, 0.03) 1px,
+                    transparent 1px,
+                    transparent 2px
+                );
+            pointer-events: none;
+            z-index: 1;
+            animation: scanlines 8s linear infinite;
+        }
+        
+        @keyframes scanlines {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(10px); }
+        }
+        
+        .container {
+            background: linear-gradient(135deg, rgba(15, 52, 96, 0.9) 0%, rgba(10, 14, 39, 0.95) 100%);
+            border: 2px solid #00ff88;
+            border-radius: 0;
+            padding: 30px;
+            box-shadow: 
+                0 0 40px rgba(0, 255, 136, 0.3),
+                inset 0 0 40px rgba(0, 255, 136, 0.1),
+                0 0 80px rgba(255, 0, 255, 0.1);
+            max-width: 600px;
+            width: 100%;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .container::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00ff88, #ff00ff, #00ffff, #00ff88);
+            background-size: 400% 400%;
+            border-radius: 0;
+            z-index: -1;
+            opacity: 0;
+            animation: borderGlow 3s ease-in-out infinite;
+        }
+        
+        @keyframes borderGlow {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 0.5; }
+        }
+        
+        h1 {
+            text-align: center;
+            color: #00ff88;
+            margin-bottom: 5px;
+            font-size: 2.2em;
+            text-shadow: 0 0 10px #00ff88, 0 0 20px rgba(0, 255, 136, 0.5);
+            letter-spacing: 2px;
+            font-weight: bold;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #ff00ff;
+            margin-bottom: 30px;
+            font-size: 0.85em;
+            text-shadow: 0 0 10px #ff00ff;
+            letter-spacing: 1px;
+        }
+        
+        .status-panel {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.1) 0%, rgba(255, 0, 255, 0.05) 100%);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            padding: 15px;
+            border-radius: 0;
+            margin-bottom: 25px;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.2), inset 0 0 20px rgba(0, 255, 136, 0.05);
+        }
+        
+        .status-item {
+            display: inline-block;
+            margin: 5px 12px;
+            font-size: 0.85em;
+            text-shadow: 0 0 5px #00ff88;
+        }
+        
+        .status-item span {
+            color: #ff00ff;
+            text-shadow: 0 0 5px #ff00ff;
+        }
+        
+        .control-section {
+            margin-bottom: 25px;
+        }
+        
+        .section-title {
+            font-size: 1.1em;
+            color: #00ffff;
+            margin-bottom: 15px;
+            font-weight: bold;
+            border-bottom: 2px solid #00ffff;
+            padding-bottom: 8px;
+            text-shadow: 0 0 10px #00ffff;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .direction-grid {
+            display: grid;
+            grid-template-areas:
+                ". up ."
+                "left . right"
+                ". down .";
+            gap: 12px;
+            max-width: 300px;
+            margin: 0 auto 15px;
+        }
+        
+        .btn {
+            padding: 14px 18px;
+            border: 2px solid #00ff88;
+            border-radius: 0;
+            font-size: 0.95em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #00ff88;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.1) 0%, rgba(0, 255, 136, 0.05) 100%);
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 0 5px #00ff88;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn:hover {
+            border-color: #ff00ff;
+            color: #ff00ff;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.5), inset 0 0 20px rgba(0, 255, 136, 0.1);
+            text-shadow: 0 0 10px #ff00ff, 0 0 20px rgba(255, 0, 255, 0.5);
+            background: linear-gradient(135deg, rgba(255, 0, 255, 0.15) 0%, rgba(255, 0, 255, 0.08) 100%);
+        }
+        
+        .btn:hover::before {
+            left: 100%;
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.8);
+        }
+        
+        .btn-primary {
+            border-color: #00ff88;
+            color: #00ff88;
+        }
+        
+        .btn-primary:hover {
+            border-color: #ff00ff;
+            color: #ff00ff;
+        }
+        
+        .btn-success {
+            border-color: #00ff88;
+            color: #00ff88;
+        }
+        
+        .btn-success:hover {
+            border-color: #00ffff;
+            color: #00ffff;
+        }
+        
+        .btn-warning {
+            border-color: #ffaa00;
+            color: #ffaa00;
+        }
+        
+        .btn-warning:hover {
+            border-color: #ff00ff;
+            color: #ff00ff;
+        }
+        
+        .btn-info {
+            border-color: #00ffff;
+            color: #00ffff;
+        }
+        
+        .btn-info:hover {
+            border-color: #ff00ff;
+            color: #ff00ff;
+        }
+        
+        .btn-danger {
+            border-color: #ff0055;
+            color: #ff0055;
+        }
+        
+        .btn-danger:hover {
+            border-color: #ff00ff;
+            color: #ff00ff;
+        }
+        
+        .btn-up { grid-area: up; }
+        .btn-down { grid-area: down; }
+        .btn-left { grid-area: left; }
+        .btn-right { grid-area: right; }
+        
+        .rotation-controls {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+        
+        .feedback {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 0;
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.9) 0%, rgba(0, 255, 136, 0.7) 100%);
+            color: #0a0e27;
+            font-weight: bold;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+            opacity: 0;
+            transform: translateX(400px);
+            transition: all 0.3s ease;
+            border: 2px solid #00ff88;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .feedback.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        .feedback.error {
+            background: linear-gradient(135deg, rgba(255, 0, 85, 0.9) 0%, rgba(255, 0, 85, 0.7) 100%);
+            border-color: #ff0055;
+            color: #0a0e27;
+        }
+        
+        .emoji {
+            font-size: 1.3em;
+            margin-right: 8px;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 1.6em;
+            }
+            
+            .btn {
+                padding: 12px 14px;
+                font-size: 0.85em;
+            }
+            
+            .status-item {
+                display: block;
+                margin: 8px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ NEXUS ⚡</h1>
+        <p class="subtitle">NEURAL EXOSUIT CONTROL UNIT v2.0</p>
+        
+        <div class="status-panel">
+            <div class="status-item">📍 POSITION: <span id="position">0.0, 0.0, -10.0</span></div>
+            <div class="status-item">🔄 ROTATION: <span id="rotation">0°</span></div>
+            <div class="status-item">🎭 STATUS: <span id="status">READY</span></div>
+        </div>
+        
+        <div class="control-section">
+            <div class="section-title">> MOVEMENT PROTOCOLS</div>
+            <div class="direction-grid">
+                <button class="btn btn-primary btn-up" onclick="sendCommand('forward')">
+                    ⬆️ FORWARD
+                </button>
+                <button class="btn btn-primary btn-left" onclick="sendCommand('left')">
+                    ⬅️ LEFT
+                </button>
+                <button class="btn btn-primary btn-right" onclick="sendCommand('right')">
+                    ➡️ RIGHT
+                </button>
+                <button class="btn btn-primary btn-down" onclick="sendCommand('backward')">
+                    ⬇️ BACK
+                </button>
+            </div>
+            
+            <div class="rotation-controls">
+                <button class="btn btn-info" onclick="sendCommand('rotate_left')" style="flex: 1;">
+                    ↩️ ROTATE LEFT
+                </button>
+                <button class="btn btn-info" onclick="sendCommand('rotate_right')" style="flex: 1;">
+                    ↪️ ROTATE RIGHT
+                </button>
+            </div>
+        </div>
+        
+        <div class="control-section">
+            <div class="section-title">> ACTION PROTOCOLS</div>
+            <div class="button-grid">
+                <button class="btn btn-success" onclick="sendCommand('jump')">
+                    🦘 JUMP
+                </button>
+                <button class="btn btn-warning" onclick="sendCommand('wave')">
+                    👋 WAVE
+                </button>
+                <button class="btn btn-warning" onclick="sendCommand('dance')">
+                    💃 DANCE
+                </button>
+                <button class="btn btn-info" onclick="sendCommand('nod')">
+                    🙂 NOD
+                </button>
+                <button class="btn btn-danger" onclick="sendCommand('reset')">
+                    🔄 RESET
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="feedback" id="feedback"></div>
+    
+    <script>
+        function sendCommand(command) {
+            fetch('/command', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ command: command })
+            })
+            .then(response => response.json())
+            .then(data => {
+                showFeedback(`[COMMAND] ${command.toUpperCase()} EXECUTED`, false);
+                updateStatus();
+            })
+            .catch(error => {
+                showFeedback('[ERROR] ' + error, true);
+            });
+        }
+        
+        function showFeedback(message, isError = false) {
+            const feedback = document.getElementById('feedback');
+            feedback.textContent = message;
+            feedback.classList.toggle('error', isError);
+            feedback.classList.add('show');
+            
+            setTimeout(() => {
+                feedback.classList.remove('show');
+            }, 2500);
+        }
+        
+        function updateStatus() {
+            fetch('/status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.position) {
+                        document.getElementById('position').textContent = 
+                            `${data.position[0].toFixed(1)}, ${data.position[1].toFixed(1)}, ${data.position[2].toFixed(1)}`;
+                        document.getElementById('rotation').textContent = 
+                            `${data.rotation[1].toFixed(0)}°`;
+                        
+                        let status = 'READY';
+                        if (data.is_dancing) status = 'DANCING 💃';
+                        else if (data.is_waving) status = 'WAVING 👋';
+                        document.getElementById('status').textContent = status;
+                    }
+                })
+                .catch(error => console.error('Status update error:', error));
+        }
+        
+        setInterval(updateStatus, 1000);
+        
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case 'ArrowUp': sendCommand('forward'); break;
+                case 'ArrowDown': sendCommand('backward'); break;
+                case 'ArrowLeft': sendCommand('rotate_left'); break;
+                case 'ArrowRight': sendCommand('rotate_right'); break;
+                case ' ': sendCommand('jump'); e.preventDefault(); break;
+                case 'w': sendCommand('wave'); break;
+                case 'd': sendCommand('dance'); break;
+                case 'n': sendCommand('nod'); break;
+                case 'r': sendCommand('reset'); break;
+            }
+        });
+    </script>
+</body>
+</html>
